@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Educativo - Diabetes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-pink-200 flex justify-center items-center min-h-screen">
+    <div id="game-container" class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+        <div id="start-screen">
+            <div class="text-6xl">😊</div>
+            <h1 class="font-bold text-lg my-4">¡Hola, soy DIBI y tengo Diabetes!<br>¿Puedes ayudarme?</h1>
+            <input type="text" id="player-name" class="border rounded w-full p-2" placeholder="Escribe tu nombre">
+            <button onclick="startGame()" class="mt-4 w-full bg-blue-300 hover:bg-yellow-400 text-white font-bold py-2 px-4 rounded-full">Comenzar</button>
+        </div>
+        
+        <div id="question-screen" class="hidden">
+            <div id="emoji" class="text-6xl">😊</div>
+            <p id="question" class="font-bold my-4"></p>
+            <div id="options" class="flex flex-col space-y-2"></div>
+            <p class="mt-4">Puntuación: <span id="score">100</span></p>
+        </div>
+        
+        <div id="end-screen" class="hidden">
+            <div class="text-6xl">🎉</div>
+            <h2 class="font-bold text-lg my-4">¡Gracias por jugar!</h2>
+            <button onclick="restartGame()" class="bg-blue-300 hover:bg-yellow-400 text-white font-bold py-2 px-4 rounded-full w-full">Volver a jugar</button>
+            <button onclick="goToStart()" class="mt-2 bg-blue-300 hover:bg-yellow-400 text-white font-bold py-2 px-4 rounded-full w-full">Volver al inicio</button>
+        </div>
+    </div>
+    
+    <div id="ranking" class="absolute top-4 right-4 bg-white p-4 rounded shadow-md">
+        <h3 class="font-bold">Ranking</h3>
+        <ul id="ranking-list"></ul>
+    </div>
+    
+    <script>
+        let questions = [
+            { question: "¿Qué debo hacer si tengo mucha sed?", options: ["Tomar agua", "Comer dulces", "No hacer nada"], correct: 0 },
+            { question: "¿Cómo controlo mi diabetes?", options: ["Comiendo sano", "Ignorándola", "Comiendo solo dulces"], correct: 0 },
+            { question: "¿Por qué necesito insulina?", options: ["Para ayudar a mi cuerpo", "Porque es un juego", "Porque la necesito solo a veces"], correct: 0 },
+            { question: "¿Qué alimento es saludable para mí?", options: ["Frutas y verduras", "Refrescos", "Golosinas"], correct: 0 },
+            { question: "¿Qué pasa si mi azúcar es muy alta?", options: ["Me siento mal", "No pasa nada", "Me vuelvo más fuerte"], correct: 0 },
+            { question: "¿Puedo hacer ejercicio?", options: ["Sí, es bueno para mí", "No, es malo", "Solo si llueve"], correct: 0 },
+            { question: "¿Qué pasa si como mucho azúcar?", options: ["Mi azúcar sube", "No cambia nada", "Me siento mejor"], correct: 0 },
+            { question: "¿Quién me ayuda a controlar mi diabetes?", options: ["Mi médico y familia", "Nadie", "Un mago"], correct: 0 },
+            { question: "¿Por qué debo medir mi azúcar?", options: ["Para saber cómo estoy", "Solo por diversión", "No es necesario"], correct: 0 },
+            { question: "¿Debo decirle a mis amigos que tengo diabetes?", options: ["Sí, me pueden ayudar", "No, es un secreto", "Solo si quiero caramelos"], correct: 0 }
+        ];
+
+        let score = 100, currentQuestion = 0, playerName = "";
+        let rankings = JSON.parse(localStorage.getItem("rankings")) || [];
+
+        function startGame() {
+            playerName = document.getElementById("player-name").value;
+            if (playerName.trim() === "") return alert("Por favor, ingresa tu nombre");
+            document.getElementById("start-screen").classList.add("hidden");
+            document.getElementById("question-screen").classList.remove("hidden");
+            score = 100;
+            currentQuestion = 0;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= questions.length) return endGame();
+            let q = questions[currentQuestion];
+            document.getElementById("question").innerText = q.question;
+            let optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            q.options.forEach((opt, index) => {
+                let btn = document.createElement("button");
+                btn.className = "bg-blue-300 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index === q.correct);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(correct) {
+            if (correct) score += 10;
+            else score -= 10;
+            updateEmoji();
+            currentQuestion++;
+            setTimeout(showQuestion, 500);
+        }
+
+        function updateEmoji() {
+            let emoji = "😊";
+            if (score >= 120) emoji = "🤩";
+            else if (score <= 70) emoji = "😢";
+            document.getElementById("emoji").innerText = emoji;
+            document.getElementById("score").innerText = score;
+        }
+
+        function endGame() {
+            rankings.unshift({ name: playerName, score: score });
+            rankings = rankings.slice(0, 10);
+            localStorage.setItem("rankings", JSON.stringify(rankings));
+            updateRanking();
+            document.getElementById("question-screen").classList.add("hidden");
+            document.getElementById("end-screen").classList.remove("hidden");
+        }
+
+        function updateRanking() {
+            let rankingList = document.getElementById("ranking-list");
+            rankingList.innerHTML = rankings.map(r => `<li>${r.name}: ${r.score}</li>`).join("");
+        }
+
+        function restartGame() { startGame(); }
+        function goToStart() {
+            document.getElementById("end-screen").classList.add("hidden");
+            document.getElementById("start-screen").classList.remove("hidden");
+        }
+        
+        updateRanking();
+    </script>
+</body>
+</html>
